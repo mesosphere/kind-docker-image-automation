@@ -42,7 +42,8 @@ jobs:
         with:
           platforms: arm64
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
+        id: buildx
+        uses: docker/setup-buildx-action@v2
       - name: Build KinD image for amd64
         run: |
           kind build node-image . --arch amd64 --image jimmidyson/kind-node:${{ env.TAG }}-amd64
