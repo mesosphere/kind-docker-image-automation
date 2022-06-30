@@ -1,9 +1,6 @@
 name: Build and push KinD node image
 
 on:
-  create:
-    tags:
-      - v1.2[0-9].[0-9]+
   workflow_dispatch:
     inputs:
       tag:
@@ -20,19 +17,10 @@ jobs:
         arch: [amd64, arm64]
 
     steps:
-      - name: Set tag to use in environment
-        run: |-
-          echo "TAG=$(
-          if [ -n "${{ github.event.inputs.tag }}" ]; then
-            echo ${{ github.event.inputs.tag }}
-          else
-            echo ${{ github.ref }}
-          fi
-          )" >> $GITHUB_ENV
       - uses: actions/checkout@v3
         with:
           persist-credentials: false
-          ref: ${{ env.TAG }}
+          ref: ${{ github.event.inputs.tag }}
       - name: Install KinD
         uses: helm/kind-action@v1.3.0
         with:
@@ -49,10 +37,10 @@ jobs:
         uses: docker/setup-buildx-action@v2
       - name: Build KinD image for ${{ matrix.arch }}
         run: |
-          kind build node-image . --arch ${{ matrix.arch }} --image ${{ github.repository_owner }}/kind-node:${{ env.TAG }}-${{ matrix.arch }}
+          kind build node-image . --arch ${{ matrix.arch }} --image ${{ github.repository_owner }}/kind-node:${{ github.event.inputs.tag }}-${{ matrix.arch }}
       - name: Push KinD images
         run: |
-          docker push ${{ github.repository_owner }}/kind-node:${{ env.TAG }}-${{ matrix.arch }}
+          docker push ${{ github.repository_owner }}/kind-node:${{ github.event.inputs.tag }}-${{ matrix.arch }}
 
   build-and-push-manifest:
     needs: [build-and-push-arch-images]
@@ -60,15 +48,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Set tag to use in environment
-        run: |-
-          echo "TAG=$(
-          if [ -n "${{ github.event.inputs.tag }}" ]; then
-            echo ${{ github.event.inputs.tag }}
-          else
-            echo ${{ github.ref }}
-          fi
-          )" >> $GITHUB_ENV
       - name: Login to Docker Hub
         uses: docker/login-action@v1
         with:
@@ -76,7 +55,7 @@ jobs:
           password: ${{ secrets.DOCKER_TOKEN }}
       - name: Push KinD multiplatform manifest
         run: |
-          docker manifest create ${{ github.repository_owner }}/kind-node:${{ env.TAG }}{,-{arm64,amd64}}
-          docker manifest push ${{ github.repository_owner }}/kind-node:${{ env.TAG }}
+          docker manifest create ${{ github.repository_owner }}/kind-node:${{ github.event.inputs.tag }}{,-{arm64,amd64}}
+          docker manifest push ${{ github.repository_owner }}/kind-node:${{ github.event.inputs.tag }}
         env:
           DOCKER_CLI_EXPERIMENTAL: enabled

@@ -10,9 +10,16 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
-        with:
-          persist-credentials: false
+      - name: List tags before sync
+        id: before-sync
+        run: |
+          echo "::set-output name=tags::$(
+            gh api --cache 0s --paginate /repos/${{ github.repository }}/tags \
+              --jq 'map(select(.name | test("^v1.2[3-9].[0-9]+$")))[].name' | \
+              tr '\n' ' '
+          )"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: git-sync-k8s-tags
         uses: wei/git-sync@v3
         with:
@@ -21,3 +28,17 @@ jobs:
           destination_repo: "git@github.com:${{github.repository}}.git"
           destination_branch: "refs/tags/*"
           destination_ssh_private_key: ${{ secrets.DESTINATION_SSH_PRIVATE_KEY }}
+      - name: List tags after sync
+        id: after-sync
+        run: |
+          echo "::set-output name=tags::$(
+            gh api --cache 0s --paginate /repos/${{ github.repository }}/tags \
+              --jq 'map(select(.name | test("^v1.2[3-9].[0-9]+$")))[].name' | \
+              tr '\n' ' '
+          )"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Print new tags
+        run: |
+          echo ${{ steps.before-sync.outputs.tags }} ${{ steps.after-sync.outputs.tags }} | \
+            tr ' ' '\n' | sort | uniq -u
