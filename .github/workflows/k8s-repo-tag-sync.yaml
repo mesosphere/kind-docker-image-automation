@@ -38,7 +38,10 @@ jobs:
           )"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Print new tags
+      - name: Trigger KinD image build workflow
         run: |
           echo ${{ steps.before-sync.outputs.tags }} ${{ steps.after-sync.outputs.tags }} | \
-            tr ' ' '\n' | sort | uniq -u
+            tr ' ' '\n' | sort | uniq -u | \
+            xargs --verbose -I{} -n1 gh workflow run -R mesosphere/kind-docker-image-automation build-kind-image.yaml -f tag={}
+        env:
+          GH_TOKEN: ${{ secrets.WORKFLOW_TRIGGER_TOKEN }}
