@@ -1,13 +1,13 @@
 name: Build and push KinD node image
 
 on:
-  push:
+  create:
     tags:
-      - 'v1.2[0-9].[0-9]+'
+      - v1.2[0-9].[0-9]+
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Tag to build images for'
+        description: "Tag to build images for"
         required: true
 
 jobs:
