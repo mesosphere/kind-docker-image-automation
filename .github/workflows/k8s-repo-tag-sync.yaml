@@ -33,7 +33,7 @@ jobs:
         run: |
           echo "::set-output name=tags::$(
             gh api --cache 0s --paginate /repos/${{ github.repository }}/tags \
-              --jq 'map(select(.name | test("^v1.2[3-9].[0-9]+$")))[].name' | \
+              --jq 'map(select(.name | test("^v1.2[2-9].[0-9]+$")))[].name' | \
               tr '\n' ' '
           )"
         env:
