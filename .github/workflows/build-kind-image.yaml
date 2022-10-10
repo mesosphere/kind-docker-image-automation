@@ -44,7 +44,7 @@ jobs:
           FROM --platform=${{ matrix.arch }} ${{ github.repository_owner }}/kind-node:${{ github.event.inputs.tag }}-${{ matrix.arch }}
 
           RUN sed -i -e 's/archive.ubuntu.com\|security.ubuntu.com/old-releases.ubuntu.com/g' /etc/apt/sources.list
-          RUN apt-get update && apt-get install -y lvm2 dpkg-dev && rm -rf /var/lib/apt/lists/*
+          RUN apt-get update && apt-get install -y lvm2 && rm -rf /var/lib/apt/lists/*
           EOF
 
           cat Dockerfile
