@@ -43,7 +43,8 @@ jobs:
           cat <<EOF >>Dockerfile
           FROM --platform=${{ matrix.arch }} ${{ github.repository_owner }}/kind-node:${{ github.event.inputs.tag }}-${{ matrix.arch }}
 
-          RUN sed -i -e 's/archive.ubuntu.com\|security.ubuntu.com/old-releases.ubuntu.com/g' /etc/apt/sources.list
+          # If the base image used (e.g.: https://github.com/kubernetes-sigs/kind/blob/v0.16.0/pkg/build/nodeimage/defaults.go#L23) in KinD ever gets outdated, move to `old-release.ubuntu.com`
+          # RUN sed -i -e 's/archive.ubuntu.com\|security.ubuntu.com/old-releases.ubuntu.com/g' /etc/apt/sources.list
           RUN apt-get update && apt-get install -y lvm2 && rm -rf /var/lib/apt/lists/*
           EOF
 
