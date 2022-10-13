@@ -22,7 +22,7 @@ jobs:
           persist-credentials: false
           ref: ${{ github.event.inputs.tag }}
       - name: Install KinD
-        uses: helm/kind-action@v1
+        uses: helm/kind-action@v1.3.0
         with:
           install_only: true
       - name: Login to Docker Hub
