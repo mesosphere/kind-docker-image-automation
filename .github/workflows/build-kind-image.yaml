@@ -40,7 +40,7 @@ jobs:
           kind build node-image . --arch ${{ matrix.arch }} --image ${{ github.repository_owner }}/kind-node:${{ github.event.inputs.tag }}-${{ matrix.arch }}
       - name: Repackage kind node with additional packages
         run: |
-          cat <<EOF >>Dockerfile
+          cat <<'EOF' >>Dockerfile
           FROM --platform=${{ matrix.arch }} ${{ github.repository_owner }}/kind-node:${{ github.event.inputs.tag }}-${{ matrix.arch }}
 
           # If the base image used (e.g.: https://github.com/kubernetes-sigs/kind/blob/v0.16.0/pkg/build/nodeimage/defaults.go#L23) in KinD ever gets outdated, move to `old-release.ubuntu.com`
