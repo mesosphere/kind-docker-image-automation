@@ -38,9 +38,12 @@ jobs:
       - name: Build KinD image for ${{ matrix.arch }}
         run: |
           kind build node-image . --arch ${{ matrix.arch }} --image ${{ github.repository_owner }}/kind-node:${{ github.event.inputs.tag }}-${{ matrix.arch }}
-      - name: Repackage kind node with additional packages
+      - name: Push KinD images
         run: |
-          cat <<EOF >>Dockerfile
+          docker push ${{ github.repository_owner }}/kind-node:${{ github.event.inputs.tag }}-${{ matrix.arch }}
+      - name: Build and Push KinD image for CI
+        run: |
+          cat <<'EOF' >>Dockerfile
           FROM --platform=${{ matrix.arch }} ${{ github.repository_owner }}/kind-node:${{ github.event.inputs.tag }}-${{ matrix.arch }}
 
           # If the base image used (e.g.: https://github.com/kubernetes-sigs/kind/blob/v0.16.0/pkg/build/nodeimage/defaults.go#L23) in KinD ever gets outdated, move to `old-release.ubuntu.com`
@@ -49,10 +52,8 @@ jobs:
           EOF
 
           cat Dockerfile
-          docker build -t ${{ github.repository_owner }}/kind-node:${{ github.event.inputs.tag }}-${{ matrix.arch }} -f Dockerfile .
-      - name: Push KinD images
-        run: |
-          docker push ${{ github.repository_owner }}/kind-node:${{ github.event.inputs.tag }}-${{ matrix.arch }}
+          docker build -t ${{ github.repository_owner }}/kind-node-ci:${{ github.event.inputs.tag }}-${{ matrix.arch }} -f Dockerfile .
+          docker push ${{ github.repository_owner }}/kind-node-ci:${{ github.event.inputs.tag }}-${{ matrix.arch }}
 
   build-and-push-manifest:
     needs: [build-and-push-arch-images]
