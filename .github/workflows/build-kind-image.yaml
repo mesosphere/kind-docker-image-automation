@@ -38,7 +38,10 @@ jobs:
       - name: Build KinD image for ${{ matrix.arch }}
         run: |
           kind build node-image . --arch ${{ matrix.arch }} --image ${{ github.repository_owner }}/kind-node:${{ github.event.inputs.tag }}-${{ matrix.arch }}
-      - name: Repackage kind node with additional packages
+      - name: Push KinD images
+        run: |
+          docker push ${{ github.repository_owner }}/kind-node:${{ github.event.inputs.tag }}-${{ matrix.arch }}
+      - name: Build and Push KinD image for CI
         run: |
           cat <<'EOF' >>Dockerfile
           FROM --platform=${{ matrix.arch }} ${{ github.repository_owner }}/kind-node:${{ github.event.inputs.tag }}-${{ matrix.arch }}
@@ -49,10 +52,8 @@ jobs:
           EOF
 
           cat Dockerfile
-          docker build -t ${{ github.repository_owner }}/kind-node:${{ github.event.inputs.tag }}-${{ matrix.arch }} -f Dockerfile .
-      - name: Push KinD images
-        run: |
-          docker push ${{ github.repository_owner }}/kind-node:${{ github.event.inputs.tag }}-${{ matrix.arch }}
+          docker build -t ${{ github.repository_owner }}/kind-node-ci:${{ github.event.inputs.tag }}-${{ matrix.arch }} -f Dockerfile .
+          docker push ${{ github.repository_owner }}/kind-node-ci:${{ github.event.inputs.tag }}-${{ matrix.arch }}
 
   build-and-push-manifest:
     needs: [build-and-push-arch-images]
@@ -69,5 +70,11 @@ jobs:
         run: |
           docker manifest create ${{ github.repository_owner }}/kind-node:${{ github.event.inputs.tag }}{,-{arm64,amd64}}
           docker manifest push ${{ github.repository_owner }}/kind-node:${{ github.event.inputs.tag }}
+        env:
+          DOCKER_CLI_EXPERIMENTAL: enabled
+      - name: Push KinD multiplatform manifest for CI images
+        run: |
+          docker manifest create ${{ github.repository_owner }}/kind-node-ci:${{ github.event.inputs.tag }}{,-{arm64,amd64}}
+          docker manifest push ${{ github.repository_owner }}/kind-node-ci:${{ github.event.inputs.tag }}
         env:
           DOCKER_CLI_EXPERIMENTAL: enabled
