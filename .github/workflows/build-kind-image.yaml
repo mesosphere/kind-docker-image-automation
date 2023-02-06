@@ -38,22 +38,50 @@ jobs:
       - name: Build KinD image for ${{ matrix.arch }}
         run: |
           kind build node-image . --arch ${{ matrix.arch }} --image ${{ github.repository_owner }}/kind-node:${{ github.event.inputs.tag }}-${{ matrix.arch }}
-      - name: Push KinD images
+      - name: Push KinD image
         run: |
-          docker push ${{ github.repository_owner }}/kind-node:${{ github.event.inputs.tag }}-${{ matrix.arch }}
+          docker image push ${{ github.repository_owner }}/kind-node:${{ github.event.inputs.tag }}-${{ matrix.arch }}
+      - name: Create list of images to add to KinD node image
+        run: |
+          cat <<'EOF' >images.txt
+          docker.io/mesosphere/toml-merge:v0.1.0
+          EOF
+      - name: Create image bundle with extra images for the KinD node image
+        uses: mesosphere/mindthegap-action/create-image-bundle@v1
+        with:
+          platforms: linux/${{ matrix.arch }}
+      - name: Import images to node image
+        run: |
+          cat <<'EOF' >Dockerfile
+          FROM --platform=linux/${{ matrix.arch }} ${{ github.repository_owner }}/kind-node:${{ github.event.inputs.tag }}-${{ matrix.arch }}
+
+          # If the base image used (e.g.: https://github.com/kubernetes-sigs/kind/blob/v0.17.0/pkg/build/nodeimage/defaults.go#L23) in KinD ever gets outdated, move to `old-release.ubuntu.com`
+          # RUN sed -i -e 's/archive.ubuntu.com\|security.ubuntu.com/old-releases.ubuntu.com/g' /etc/apt/sources.list
+          
+          RUN --mount=type=bind,source=images.tar,target=/tmp/images.tar \
+              bash -ec "curl -fsSL https://github.com/mesosphere/mindthegap/releases/download/v1.5.3/mindthegap_v1.5.3_linux_${{ matrix.arch }}.tar.gz | \
+                tar xz -C /usr/local/bin -- mindthegap; \
+                nohup containerd & &>/dev/null; \
+                mindthegap import image-bundle --image-bundle /tmp/images.tar; \
+                rm -f /usr/local/bin/mindthegap"
+          EOF
+
+          cat Dockerfile
+          docker buildx build --output=type=docker -t ${{ github.repository_owner }}/kind-node:${{ github.event.inputs.tag }}-${{ matrix.arch }} -f Dockerfile .
+      - name: Push updated KinD image
+        run: |
+          docker image push ${{ github.repository_owner }}/kind-node:${{ github.event.inputs.tag }}-${{ matrix.arch }}
       - name: Build and Push KinD image for CI
         run: |
-          cat <<'EOF' >>Dockerfile
-          FROM --platform=${{ matrix.arch }} ${{ github.repository_owner }}/kind-node:${{ github.event.inputs.tag }}-${{ matrix.arch }}
+          cat <<'EOF' >Dockerfile
+          FROM --platform=linux/${{ matrix.arch }} ${{ github.repository_owner }}/kind-node:${{ github.event.inputs.tag }}-${{ matrix.arch }}
 
-          # If the base image used (e.g.: https://github.com/kubernetes-sigs/kind/blob/v0.16.0/pkg/build/nodeimage/defaults.go#L23) in KinD ever gets outdated, move to `old-release.ubuntu.com`
-          # RUN sed -i -e 's/archive.ubuntu.com\|security.ubuntu.com/old-releases.ubuntu.com/g' /etc/apt/sources.list
           RUN apt-get update && apt-get install -y lvm2 && rm -rf /var/lib/apt/lists/*
           EOF
 
           cat Dockerfile
-          docker build -t ${{ github.repository_owner }}/kind-node-ci:${{ github.event.inputs.tag }}-${{ matrix.arch }} -f Dockerfile .
-          docker push ${{ github.repository_owner }}/kind-node-ci:${{ github.event.inputs.tag }}-${{ matrix.arch }}
+          docker buildx build --output=type=docker -t ${{ github.repository_owner }}/kind-node-ci:${{ github.event.inputs.tag }}-${{ matrix.arch }} -f Dockerfile .
+          docker image push ${{ github.repository_owner }}/kind-node-ci:${{ github.event.inputs.tag }}-${{ matrix.arch }}
 
   build-and-push-manifest:
     needs: [build-and-push-arch-images]
