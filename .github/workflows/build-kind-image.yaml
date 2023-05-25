@@ -25,7 +25,7 @@ jobs:
           persist-credentials: false
           ref: ${{ github.event.inputs.tag }}
       - name: Install KinD
-        uses: helm/kind-action@v1
+        uses: helm/kind-action@v1.7.0
         with:
           install_only: true
       - name: Login to Docker Hub
@@ -66,7 +66,7 @@ jobs:
 
           # If the base image used (e.g.: https://github.com/kubernetes-sigs/kind/blob/v0.17.0/pkg/build/nodeimage/defaults.go#L23) in KinD ever gets outdated, move to `old-release.ubuntu.com`
           # RUN sed -i -e 's/archive.ubuntu.com\|security.ubuntu.com/old-releases.ubuntu.com/g' /etc/apt/sources.list
-          
+
           RUN --mount=type=bind,source=images.tar,target=/tmp/images.tar \
               bash -ec "curl -fsSL https://github.com/mesosphere/mindthegap/releases/download/v1.5.3/mindthegap_v1.5.3_linux_${{ matrix.arch }}.tar.gz | \
                 tar xz -C /usr/local/bin -- mindthegap; \
