@@ -17,7 +17,7 @@ jobs:
             gh api --cache 0s --paginate /repos/${{ github.repository }}/tags | \
               jq -r 'map(select(.name | test("^v1.2[2-9].[0-9]+$")))[].name' | \
               tr '\n' ' '
-          ) >> $GITHUB_OUTPUT"
+          )" >> $GITHUB_OUTPUT
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: git-sync-k8s-tags
