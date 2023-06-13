@@ -13,15 +13,15 @@ jobs:
       - name: List tags before sync
         id: before-sync
         run: |
-          echo "::set-output name=tags::$(
+          echo "tags=$(
             gh api --cache 0s --paginate /repos/${{ github.repository }}/tags | \
               jq -r 'map(select(.name | test("^v1.2[2-9].[0-9]+$")))[].name' | \
               tr '\n' ' '
-          )"
+          ) >> $GITHUB_OUTPUT"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: git-sync-k8s-tags
-        uses: wei/git-sync@v3
+        uses: doapply/git-sync-repo@v3.0.0
         with:
           source_repo: "https://github.com/kubernetes/kubernetes.git"
           source_branch: "refs/tags/*"
@@ -31,11 +31,11 @@ jobs:
       - name: List tags after sync
         id: after-sync
         run: |
-          echo "::set-output name=tags::$(
+          echo "tags=$(
             gh api --cache 0s --paginate /repos/${{ github.repository }}/tags | \
               jq -r 'map(select(.name | test("^v1.2[2-9].[0-9]+$")))[].name' | \
               tr '\n' ' '
-          )"
+          )" >> $GITHUB_OUTPUT
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Trigger KinD image build workflow
