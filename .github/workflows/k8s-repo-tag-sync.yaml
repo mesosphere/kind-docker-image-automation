@@ -7,7 +7,7 @@ on:
 
 jobs:
   git-sync:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     steps:
       - name: List tags before sync
