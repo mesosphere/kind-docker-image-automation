@@ -21,7 +21,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: git-sync-k8s-tags
-        uses: doapply/git-sync-repo@v3.0.0
+        uses: bei-re/git-sync-sha1@v1
         with:
           source_repo: "https://github.com/kubernetes/kubernetes.git"
           source_branch: "refs/tags/*"
