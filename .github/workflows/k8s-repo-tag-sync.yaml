@@ -50,6 +50,7 @@ jobs:
           )" >> $GITHUB_OUTPUT
 
   trigger-image-build:
+    if: ${{ needs.git-sync.outputs.new_tags != '[]' && needs.git-sync.outputs.new_tags != '' }}
     needs: [git-sync]
     permissions:
       actions: write
