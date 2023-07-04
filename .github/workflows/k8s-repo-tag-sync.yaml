@@ -8,7 +8,8 @@ on:
 jobs:
   git-sync:
     runs-on: ubuntu-22.04
-
+    outputs:
+      new_tags: ${{ steps.list-new-tags.outputs.new_tags }}
     steps:
       - name: List tags before sync
         id: before-sync
@@ -38,10 +39,26 @@ jobs:
           )" >> $GITHUB_OUTPUT
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Trigger KinD image build workflow
+      - name: 
+        id: list-new-tags
         run: |
-          echo ${{ steps.before-sync.outputs.tags }} ${{ steps.after-sync.outputs.tags }} | \
-            tr ' ' '\n' | sort | uniq -u | \
-            xargs --verbose -I{} -n1 gh workflow run -R mesosphere/kind-docker-image-automation build-kind-image.yaml -f tag={}
-        env:
-          GH_TOKEN: ${{ secrets.WORKFLOW_TRIGGER_TOKEN }}
+          echo "new_tags=$(
+            echo ${{ steps.before-sync.outputs.tags }} ${{ steps.after-sync.outputs.tags }} | \
+            tr ' ' '\n' | 
+            sort --unique | 
+            jq -R -s -c '{"tag": split("\n") | map(select(length > 0))}'
+          )" >> GITHUB_OUTPUT
+
+  trigger-image-build:
+    needs: [git-sync]
+    permissions:
+      actions: write
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix: ${{ fromJson(needs.git-sync.outputs.new_tags) }}
+    steps:
+      - name: Trigger KinD image build workflow
+        uses: benc-uk/workflow-dispatch@v1
+        with:
+          workflow: Build and push KinD node image
+          ref: ${{ matrix.tag }}

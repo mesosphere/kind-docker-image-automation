@@ -2,10 +2,6 @@ name: Build and push KinD node image
 
 on:
   workflow_dispatch:
-    inputs:
-      tag:
-        description: "Tag to build images for"
-        required: true
 
 permissions:
   packages: write
@@ -22,8 +18,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with:
-          persist-credentials: false
-          ref: ${{ github.event.inputs.tag }}
+          ref: ${{ github.ref }}
       - name: Install KinD
         uses: helm/kind-action@v1.7.0
         with:
@@ -46,10 +41,10 @@ jobs:
         uses: docker/setup-buildx-action@v2
       - name: Build KinD image for ${{ matrix.arch }}
         run: |
-          kind build node-image . --arch ${{ matrix.arch }} --image ghcr.io/${{ github.repository_owner }}/kind-node:${{ github.event.inputs.tag }}-${{ matrix.arch }}
+          kind build node-image . --arch ${{ matrix.arch }} --image ghcr.io/${{ github.repository_owner }}/kind-node:${{ github.ref }}-${{ matrix.arch }}
       - name: Push KinD image
         run: |
-          docker image push ghcr.io/${{ github.repository_owner }}/kind-node:${{ github.event.inputs.tag }}-${{ matrix.arch }}
+          docker image push ghcr.io/${{ github.repository_owner }}/kind-node:${{ github.ref }}-${{ matrix.arch }}
       - name: Create list of images to add to KinD node image
         run: |
           cat <<'EOF' >images.txt
@@ -62,7 +57,7 @@ jobs:
       - name: Import images to node image
         run: |
           cat <<'EOF' >Dockerfile
-          FROM --platform=linux/${{ matrix.arch }} ghcr.io/${{ github.repository_owner }}/kind-node:${{ github.event.inputs.tag }}-${{ matrix.arch }}
+          FROM --platform=linux/${{ matrix.arch }} ghcr.io/${{ github.repository_owner }}/kind-node:${{ github.ref }}-${{ matrix.arch }}
 
           # If the base image used (e.g.: https://github.com/kubernetes-sigs/kind/blob/v0.17.0/pkg/build/nodeimage/defaults.go#L23) in KinD ever gets outdated, move to `old-release.ubuntu.com`
           # RUN sed -i -e 's/archive.ubuntu.com\|security.ubuntu.com/old-releases.ubuntu.com/g' /etc/apt/sources.list
@@ -76,21 +71,21 @@ jobs:
           EOF
 
           cat Dockerfile
-          docker buildx build --output=type=docker -t ghcr.io/${{ github.repository_owner }}/kind-node:${{ github.event.inputs.tag }}-${{ matrix.arch }} -f Dockerfile .
+          docker buildx build --output=type=docker -t ghcr.io/${{ github.repository_owner }}/kind-node:${{ github.ref }}-${{ matrix.arch }} -f Dockerfile .
       - name: Push updated KinD image
         run: |
-          docker image push ghcr.io/${{ github.repository_owner }}/kind-node:${{ github.event.inputs.tag }}-${{ matrix.arch }}
+          docker image push ghcr.io/${{ github.repository_owner }}/kind-node:${{ github.ref }}-${{ matrix.arch }}
       - name: Build and Push KinD image for CI
         run: |
           cat <<'EOF' >Dockerfile
-          FROM --platform=linux/${{ matrix.arch }} ghcr.io/${{ github.repository_owner }}/kind-node:${{ github.event.inputs.tag }}-${{ matrix.arch }}
+          FROM --platform=linux/${{ matrix.arch }} ghcr.io/${{ github.repository_owner }}/kind-node:${{ github.ref }}-${{ matrix.arch }}
 
           RUN apt-get update && apt-get install -y lvm2 && rm -rf /var/lib/apt/lists/*
           EOF
 
           cat Dockerfile
-          docker buildx build --output=type=docker -t ghcr.io/${{ github.repository_owner }}/kind-node-ci:${{ github.event.inputs.tag }}-${{ matrix.arch }} -f Dockerfile .
-          docker image push ghcr.io/${{ github.repository_owner }}/kind-node-ci:${{ github.event.inputs.tag }}-${{ matrix.arch }}
+          docker buildx build --output=type=docker -t ghcr.io/${{ github.repository_owner }}/kind-node-ci:${{ github.ref }}-${{ matrix.arch }} -f Dockerfile .
+          docker image push ghcr.io/${{ github.repository_owner }}/kind-node-ci:${{ github.ref }}-${{ matrix.arch }}
 
   build-and-push-manifest:
     needs: [build-and-push-arch-images]
@@ -106,13 +101,13 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Push KinD multiplatform manifest
         run: |
-          docker manifest create ghcr.io/${{ github.repository_owner }}/kind-node:${{ github.event.inputs.tag }}{,-{arm64,amd64}}
-          docker manifest push ghcr.io/${{ github.repository_owner }}/kind-node:${{ github.event.inputs.tag }}
+          docker manifest create ghcr.io/${{ github.repository_owner }}/kind-node:${{ github.ref }}{,-{arm64,amd64}}
+          docker manifest push ghcr.io/${{ github.repository_owner }}/kind-node:${{ github.ref }}
         env:
           DOCKER_CLI_EXPERIMENTAL: enabled
       - name: Push KinD multiplatform manifest for CI images
         run: |
-          docker manifest create ghcr.io/${{ github.repository_owner }}/kind-node-ci:${{ github.event.inputs.tag }}{,-{arm64,amd64}}
-          docker manifest push ghcr.io/${{ github.repository_owner }}/kind-node-ci:${{ github.event.inputs.tag }}
+          docker manifest create ghcr.io/${{ github.repository_owner }}/kind-node-ci:${{ github.ref }}{,-{arm64,amd64}}
+          docker manifest push ghcr.io/${{ github.repository_owner }}/kind-node-ci:${{ github.ref }}
         env:
           DOCKER_CLI_EXPERIMENTAL: enabled
