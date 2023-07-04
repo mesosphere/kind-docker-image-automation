@@ -61,4 +61,4 @@ jobs:
         uses: benc-uk/workflow-dispatch@v1
         with:
           workflow: Build and push KinD node image
-          ref: ${{ matrix.tag }}
+          inputs: '{"tag": "${{ matrix.tag }}"}'
