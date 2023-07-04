@@ -39,13 +39,13 @@ jobs:
           )" >> $GITHUB_OUTPUT
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: 
+      - name: List new tags
         id: list-new-tags
         run: |
           echo "new_tags=$(
             echo ${{ steps.before-sync.outputs.tags }} ${{ steps.after-sync.outputs.tags }} | \
-            tr ' ' '\n' | 
-            sort --unique | 
+            tr ' ' '\n' |
+            sort | uniq -u |
             jq -R -s -c '{"tag": split("\n") | map(select(length > 0))}'
           )" >> GITHUB_OUTPUT
 
