@@ -21,10 +21,9 @@ jobs:
 
     steps:
       - name: Free disk space
-        uses: jlumbroso/free-disk-space@main
+        uses: insightsengineering/disk-space-reclaimer@v1
         with:
-          tool-cache: true
-          large-packages: false
+          tools-cache: true
       - name: Recreate tool cache directory
         run: mkdir -p "${RUNNER_TOOL_CACHE}"
       - uses: actions/checkout@v3
