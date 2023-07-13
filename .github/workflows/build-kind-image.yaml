@@ -20,6 +20,15 @@ jobs:
         arch: [amd64, arm64]
 
     steps:
+      - name: Maximize build space
+        uses: easimon/maximize-build-space@v7
+        with:
+          remove-dotnet: 'true'
+          remove-haskell: 'true'
+          remove-android: 'true'
+          remove-codeql: 'true'
+          remove-docker-images: 'true'
+      - run: df -h
       - uses: actions/checkout@v3
         with:
           persist-credentials: false
@@ -91,6 +100,8 @@ jobs:
           cat Dockerfile
           docker buildx build --output=type=docker -t ghcr.io/${{ github.repository_owner }}/kind-node-ci:${{ github.event.inputs.tag }}-${{ matrix.arch }} -f Dockerfile .
           docker image push ghcr.io/${{ github.repository_owner }}/kind-node-ci:${{ github.event.inputs.tag }}-${{ matrix.arch }}
+      - run: df -h
+        if: always()
 
   build-and-push-manifest:
     needs: [build-and-push-arch-images]
