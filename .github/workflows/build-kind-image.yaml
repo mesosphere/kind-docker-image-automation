@@ -20,15 +20,10 @@ jobs:
         arch: [amd64, arm64]
 
     steps:
-      - name: Maximize build space
-        uses: easimon/maximize-build-space@v7
+      - name: Free disk space
+        uses: jlumbroso/free-disk-space@main
         with:
-          remove-dotnet: 'true'
-          remove-haskell: 'true'
-          remove-android: 'true'
-          remove-codeql: 'true'
-          remove-docker-images: 'true'
-      - run: df -h
+          tool-cache: true
       - uses: actions/checkout@v3
         with:
           persist-credentials: false
