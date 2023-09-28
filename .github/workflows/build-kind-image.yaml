@@ -68,7 +68,7 @@ jobs:
           platforms: linux/${{ matrix.arch }}
       - name: Import images to node image
         run: |
-          cat <<'EOF' >Dockerfile
+          cat <<EOF >Dockerfile
           FROM --platform=linux/${{ matrix.arch }} ghcr.io/${{ github.repository_owner }}/kind-node:${{ github.event.inputs.tag }}-${{ matrix.arch }}
 
           # If the base image used (e.g.: https://github.com/kubernetes-sigs/kind/blob/v0.17.0/pkg/build/nodeimage/defaults.go#L23) in KinD ever gets outdated, move to `old-release.ubuntu.com`
@@ -80,6 +80,10 @@ jobs:
                 nohup containerd & &>/dev/null; \
                 mindthegap import image-bundle --image-bundle /tmp/images.tar; \
                 rm -f /usr/local/bin/mindthegap"
+
+          LABEL org.opencontainers.image.source=${{github.server_url}}/${{ github.repository }}
+          LABEL org.opencontainers.image.description="KinD Node Image built with KinD $(kind version | cut -f2 -d' ')"
+          LABEL org.opencontainers.image.licenses=ASL2
           EOF
 
           cat Dockerfile
