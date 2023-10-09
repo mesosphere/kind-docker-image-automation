@@ -61,11 +61,17 @@ jobs:
       - name: Push KinD image
         run: |
           docker image push ghcr.io/${{ github.repository_owner }}/kind-node:${{ github.event.inputs.tag }}-${{ matrix.arch }}
+      - name: Export pause image version
+        id: pauseimage
+        run: |
+          echo version=$(docker run --rm --entrypoint kubeadm \
+                           ghcr.io/${{ github.repository_owner }}/kind-node:${{ github.event.inputs.tag }}-${{ matrix.arch }} \
+                           config images list) | grep pause >>${GITHUB_OUTPUT}
       - name: Create list of images to add to KinD node image
         run: |
-          cat <<EOF >images.txt
+          cat <<'EOF' >images.txt
           ghcr.io/mesosphere/toml-merge:v0.2.0
-          $(docker run --rm --entrypoint bash ghcr.io/${{ github.repository_owner }}/kind-node:${{ github.event.inputs.tag }}-${{ matrix.arch }} -ec 'kubeadm config images list | grep pause')
+          ${{ steps.pauseimage.outputs.version }}
           EOF
       - name: Create image bundle with extra images for the KinD node image
         uses: mesosphere/mindthegap-action/create-image-bundle@v1
@@ -73,7 +79,7 @@ jobs:
           platforms: linux/${{ matrix.arch }}
       - name: Import images to node image
         run: |
-          cat <<EOF >Dockerfile
+          cat <<'EOF' >Dockerfile
           FROM --platform=linux/${{ matrix.arch }} ghcr.io/${{ github.repository_owner }}/kind-node:${{ github.event.inputs.tag }}-${{ matrix.arch }}
 
           # If the base image used (e.g.: https://github.com/kubernetes-sigs/kind/blob/v0.17.0/pkg/build/nodeimage/defaults.go#L23) in KinD ever gets outdated, move to `old-release.ubuntu.com`
@@ -88,7 +94,7 @@ jobs:
                 mindthegap import image-bundle --image-bundle /tmp/images.tar; \
                 rm -f /usr/local/bin/mindthegap"
 
-          RUN sed -i "s|sandbox_image = .\+$|sandbox_image = $(kubeadm config images list | grep pause)|" /etc/containerd/config.toml
+          RUN sed -i "s|sandbox_image = .\+$|sandbox_image = ${{ steps.pauseimage.outputs.version }}|" /etc/containerd/config.toml
 
           LABEL org.opencontainers.image.source=${{github.server_url}}/${{ github.repository }}
           LABEL org.opencontainers.image.description="KinD Node Image built with KinD $(kind version | cut -f2 -d' ')"
