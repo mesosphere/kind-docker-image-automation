@@ -64,7 +64,7 @@ jobs:
       - name: Export pause image version
         id: pauseimage
         run: |
-          echo version=$(docker run --rm --entrypoint kubeadm \
+          echo version=$(docker run --platform=linux/${{ matrix.arch }} --rm --entrypoint kubeadm \
                            ghcr.io/${{ github.repository_owner }}/kind-node:${{ github.event.inputs.tag }}-${{ matrix.arch }} \
                            config images list) | grep pause >>${GITHUB_OUTPUT}
       - name: Create list of images to add to KinD node image
@@ -96,7 +96,7 @@ jobs:
 
           RUN sed -i "s|sandbox_image = .\+$|sandbox_image = ${{ steps.pauseimage.outputs.version }}|" /etc/containerd/config.toml
 
-          LABEL org.opencontainers.image.source=${{github.server_url}}/${{ github.repository }}
+          LABEL org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
           LABEL org.opencontainers.image.description="KinD Node Image built with KinD $(kind version | cut -f2 -d' ')"
           LABEL org.opencontainers.image.licenses=ASL2
           EOF
