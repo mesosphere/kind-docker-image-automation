@@ -85,14 +85,14 @@ jobs:
           # If the base image used (e.g.: https://github.com/kubernetes-sigs/kind/blob/v0.17.0/pkg/build/nodeimage/defaults.go#L23) in KinD ever gets outdated, move to `old-release.ubuntu.com`
           # RUN sed -i -e 's/archive.ubuntu.com\|security.ubuntu.com/old-releases.ubuntu.com/g' /etc/apt/sources.list
 
-          RUN ctr -n k8s.io images delete $(ctr -n k8s.io images list -q | grep pause)
-
           RUN --mount=type=bind,source=images.tar,target=/tmp/images.tar \
               bash -ec "curl -fsSL https://github.com/mesosphere/mindthegap/releases/download/v1.11.1/mindthegap_v1.11.1_linux_${{ matrix.arch }}.tar.gz | \
                 tar xz -C /usr/local/bin -- mindthegap; \
                 nohup containerd & &>/dev/null; \
+                ctr -n k8s.io images delete pause registry.k8s.io/pause:3.7; \
                 mindthegap import image-bundle --image-bundle /tmp/images.tar; \
-                rm -f /usr/local/bin/mindthegap"
+                rm -f /usr/local/bin/mindthegap; \
+                pkill containerd"
 
           RUN sed -i "s|sandbox_image = .\+$|sandbox_image = ${{ steps.pauseimage.outputs.version }}|" /etc/containerd/config.toml
 
