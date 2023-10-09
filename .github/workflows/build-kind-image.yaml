@@ -66,7 +66,7 @@ jobs:
         run: |
           echo version=$(docker run --platform=linux/${{ matrix.arch }} --rm --entrypoint kubeadm \
                            ghcr.io/${{ github.repository_owner }}/kind-node:${{ github.event.inputs.tag }}-${{ matrix.arch }} \
-                           config images list) | grep pause >>${GITHUB_OUTPUT}
+                           config images list | grep pause) >>${GITHUB_OUTPUT}
       - name: Create list of images to add to KinD node image
         run: |
           cat <<'EOF' >images.txt
