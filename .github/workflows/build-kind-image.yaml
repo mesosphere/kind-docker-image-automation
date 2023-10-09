@@ -14,6 +14,10 @@ jobs:
   build-and-push-arch-images:
     runs-on: ubuntu-latest
 
+    defaults:
+      run:
+        shell: bash
+
     strategy:
       fail-fast: true
       matrix:
@@ -59,8 +63,9 @@ jobs:
           docker image push ghcr.io/${{ github.repository_owner }}/kind-node:${{ github.event.inputs.tag }}-${{ matrix.arch }}
       - name: Create list of images to add to KinD node image
         run: |
-          cat <<'EOF' >images.txt
+          cat <<EOF >images.txt
           ghcr.io/mesosphere/toml-merge:v0.2.0
+          $(docker run --rm --entrypoint bash ghcr.io/${{ github.repository_owner }}/kind-node:${{ github.event.inputs.tag }}-${{ matrix.arch }} -ec 'kubeadm config images list | grep pause')
           EOF
       - name: Create image bundle with extra images for the KinD node image
         uses: mesosphere/mindthegap-action/create-image-bundle@v1
@@ -74,12 +79,16 @@ jobs:
           # If the base image used (e.g.: https://github.com/kubernetes-sigs/kind/blob/v0.17.0/pkg/build/nodeimage/defaults.go#L23) in KinD ever gets outdated, move to `old-release.ubuntu.com`
           # RUN sed -i -e 's/archive.ubuntu.com\|security.ubuntu.com/old-releases.ubuntu.com/g' /etc/apt/sources.list
 
+          RUN ctr -n k8s.io images delete $(ctr -n k8s.io images list -q | grep pause)
+
           RUN --mount=type=bind,source=images.tar,target=/tmp/images.tar \
-              bash -ec "curl -fsSL https://github.com/mesosphere/mindthegap/releases/download/v1.5.3/mindthegap_v1.5.3_linux_${{ matrix.arch }}.tar.gz | \
+              bash -ec "curl -fsSL https://github.com/mesosphere/mindthegap/releases/download/v1.11.1/mindthegap_v1.11.1_linux_${{ matrix.arch }}.tar.gz | \
                 tar xz -C /usr/local/bin -- mindthegap; \
                 nohup containerd & &>/dev/null; \
                 mindthegap import image-bundle --image-bundle /tmp/images.tar; \
                 rm -f /usr/local/bin/mindthegap"
+
+          RUN sed -i "s|sandbox_image = .\+$|sandbox_image = $(kubeadm config images list | grep pause)|" /etc/containerd/config.toml
 
           LABEL org.opencontainers.image.source=${{github.server_url}}/${{ github.repository }}
           LABEL org.opencontainers.image.description="KinD Node Image built with KinD $(kind version | cut -f2 -d' ')"
