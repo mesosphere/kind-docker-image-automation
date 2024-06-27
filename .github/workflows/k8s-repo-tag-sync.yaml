@@ -16,7 +16,7 @@ jobs:
         run: |
           echo "tags=$(
             gh api --cache 0s --paginate /repos/${{ github.repository }}/tags | \
-              jq -r 'map(select(.name | test("^v1.2[2-9].[0-9]+$")))[].name' | \
+              jq -r 'map(select(.name | test("^v1.(2[7-9]|[3-9][0-9]).[0-9]+$")))[].name' | \
               tr '\n' ' '
           )" >> $GITHUB_OUTPUT
         env:
@@ -34,7 +34,7 @@ jobs:
         run: |
           echo "tags=$(
             gh api --cache 0s --paginate /repos/${{ github.repository }}/tags | \
-              jq -r 'map(select(.name | test("^v1.(2[2-9]|[3-9][0-9]).[0-9]+$")))[].name' | \
+              jq -r 'map(select(.name | test("^v1.(2[7-9]|[3-9][0-9]).[0-9]+$")))[].name' | \
               tr '\n' ' '
           )" >> $GITHUB_OUTPUT
         env:
