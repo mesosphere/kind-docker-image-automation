@@ -30,7 +30,7 @@ jobs:
           tools-cache: true
       - name: Recreate tool cache directory
         run: mkdir -p "${RUNNER_TOOL_CACHE}"
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           persist-credentials: false
           ref: ${{ github.event.inputs.tag }}
