@@ -91,7 +91,7 @@ jobs:
                 tar xz -C /usr/local/bin -- mindthegap; \
                 nohup containerd & &>/dev/null; \
                 until crictl info &>/dev/null; do sleep 0.5; done; \
-                crictl rmi registry.k8s.io/pause:3.7; \
+                crictl rmi "$(crictl images | grep pause | awk '{print $1,$2}' OFS=":")"; \
                 mindthegap import image-bundle --image-bundle /tmp/images.tar; \
                 rm -f /usr/local/bin/mindthegap; \
                 pkill containerd"
