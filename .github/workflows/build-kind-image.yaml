@@ -64,7 +64,7 @@ jobs:
           kind build node-image ${{ github.event.inputs.tag < 'v1.31' && '--type source .' || format('--type release {0}', github.event.inputs.tag) }} \
           --arch ${{ matrix.arch }} \
           --image ghcr.io/${{ github.repository_owner }}/kind-node:${{ github.event.inputs.tag }}-${{ matrix.arch }} \
-          ${{ inputs.base_image && format('--base-image {0}', inputs.base_image) || '' }}
+          ${{ inputs.base_image != '' && format('--base-image {0}', inputs.base_image) || '' }}
       - name: Push KinD image
         run: |
           docker image push ghcr.io/${{ github.repository_owner }}/kind-node:${{ github.event.inputs.tag }}-${{ matrix.arch }}
