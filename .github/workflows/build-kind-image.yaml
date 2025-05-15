@@ -6,6 +6,9 @@ on:
       tag:
         description: "Tag to build images for"
         required: true
+      base_image:
+        description: "Override the default kind base image (--base-image)"
+        required: false
 
 permissions:
   packages: write
@@ -58,7 +61,10 @@ jobs:
         uses: docker/setup-buildx-action@v3
       - name: Build KinD image for ${{ matrix.arch }}
         run: |
-          kind build node-image ${{ github.event.inputs.tag < 'v1.31' && '--type source .' || format('--type release {0}', github.event.inputs.tag) }} --arch ${{ matrix.arch }} --image ghcr.io/${{ github.repository_owner }}/kind-node:${{ github.event.inputs.tag }}-${{ matrix.arch }}
+          kind build node-image ${{ github.event.inputs.tag < 'v1.31' && '--type source .' || format('--type release {0}', github.event.inputs.tag) }} \
+          --arch ${{ matrix.arch }} \
+          --image ghcr.io/${{ github.repository_owner }}/kind-node:${{ github.event.inputs.tag }}-${{ matrix.arch }} \
+          ${{ inputs.base_image && format('--base-image {0}', inputs.base_image) || '' }}
       - name: Push KinD image
         run: |
           docker image push ghcr.io/${{ github.repository_owner }}/kind-node:${{ github.event.inputs.tag }}-${{ matrix.arch }}
