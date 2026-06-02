@@ -58,7 +58,7 @@ jobs:
         uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
         id: buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
       - name: Build KinD image for ${{ matrix.arch }}
         run: |
           kind build node-image ${{ github.event.inputs.tag < 'v1.31' && '--type source .' || format('--type release {0}', github.event.inputs.tag) }} \
